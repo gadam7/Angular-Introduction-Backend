@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Post,
   ValidationPipe,
@@ -20,9 +22,9 @@ export class UserController {
     return await this.userService.findAllUsers();
   }
 
-  @Get(':id')
-  async findUserById(@Param('id') id: string) {
-    return await this.userService.findUserById(parseInt(id));
+  @Get(':username')
+  async findUserByUsername(@Param('username') username: string) {
+    return await this.userService.findUserByUsername(username);
   }
 
   @Get('email/:email')
@@ -34,7 +36,21 @@ export class UserController {
 
   @Post()
   async createUser(@Body(new ValidationPipe()) user: UserDto) {
-    return await this.userService.createUser(user);
+    try {
+      return await this.userService.createUser(user);
+    } catch (error) {
+      if (error.code === 11000) {
+        throw new HttpException(
+          'Username or email exists',
+          HttpStatus.CONFLICT,
+        );
+      } else {
+        throw new HttpException(
+          'Unexpected Error occured',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
   }
 
   @Post('bulk')
